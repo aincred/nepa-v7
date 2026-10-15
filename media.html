@@ -35,6 +35,7 @@
     <div class="wrap">
       <ul>
         <li><a href="#news">News</a></li>
+        <li><a href="#social">Social Media</a></li>
         <li><a href="#gallery">Gallery</a></li>
       </ul>
     </div>
@@ -141,6 +142,38 @@
     </div>
   </section>
 
+  <section id="social" class="ap-sec sm-sec" aria-labelledby="social-h">
+    <div class="wrap">
+      <h2 id="social-h" class="h2-plain">Social Media</h2>
+      <p class="sm-lead">Follow the Academy for the latest posts. The feeds are shown by each platform and open on its own website.</p>
+      <div class="sm-grid">
+        <section class="sm-card" aria-labelledby="sm-x">
+          <h3 id="sm-x" data-no-i18n lang="en">X</h3>
+          <div class="sm-scroll" id="x-embed" tabindex="0" role="region" aria-label="Posts from X, scrollable">
+            <a class="twitter-timeline" data-height="900" data-chrome="noheader nofooter noborders" data-dnt="true" href="https://twitter.com/NEPA_GoI?ref_src=twsrc%5Etfw">Posts by @NEPA_GoI</a>
+            <p class="sm-fallback" id="x-fallback" hidden>Live posts couldn't load here. <a href="https://x.com/NEPA_GoI" target="_blank" rel="noopener noreferrer">View the latest posts on X<span class="sr-only"> (external site, opens in new tab)</span></a>.</p>
+          </div>
+          <p class="sm-foot"><a href="https://x.com/NEPA_GoI?s=20" target="_blank" rel="noopener noreferrer">Open on X<span class="sr-only"> (external site, opens in new tab)</span></a></p>
+        </section>
+        <section class="sm-card" aria-labelledby="sm-fb">
+          <h3 id="sm-fb" data-no-i18n lang="en">Facebook</h3>
+          <div class="sm-scroll" id="fb-embed" tabindex="0" role="region" aria-label="Posts from Facebook, scrollable">
+            <iframe id="fb-iframe" src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2FNorthEasternPoliceAcademy%2F&amp;tabs=timeline&amp;width=340&amp;height=900&amp;small_header=true&amp;adapt_container_width=true&amp;hide_cover=true&amp;show_facepile=false&amp;locale=en_US" title="Facebook page of North Eastern Police Academy" width="340" height="900" style="border:none;overflow:hidden" loading="lazy" scrolling="no" allow="encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            <p class="sm-fallback" id="fb-fallback" hidden>Live posts couldn't load here. <a href="https://www.facebook.com/NorthEasternPoliceAcademy/" target="_blank" rel="noopener noreferrer">View the latest posts on Facebook<span class="sr-only"> (external site, opens in new tab)</span></a>.</p>
+          </div>
+          <p class="sm-foot"><a href="https://www.facebook.com/NorthEasternPoliceAcademy/" target="_blank" rel="noopener noreferrer">Open on Facebook<span class="sr-only"> (external site, opens in new tab)</span></a></p>
+        </section>
+        <section class="sm-card" aria-labelledby="sm-ig">
+          <h3 id="sm-ig" data-no-i18n lang="en">Instagram</h3>
+          <div class="sm-scroll" tabindex="0" role="region" aria-label="Posts from Instagram, scrollable">
+            <iframe class="sm-ig" src="https://www.instagram.com/northeasternpoliceacademy/embed" title="Instagram posts of North Eastern Police Academy" loading="lazy" scrolling="no" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          </div>
+          <p class="sm-foot"><a href="https://www.instagram.com/northeasternpoliceacademy" target="_blank" rel="noopener noreferrer">Open on Instagram<span class="sr-only"> (external site, opens in new tab)</span></a></p>
+        </section>
+      </div>
+    </div>
+  </section>
+
   <section id="gallery" class="ap-sec" aria-labelledby="gallery-h">
     <div class="wrap">
       <h2 id="gallery-h" class="h2-plain">Gallery</h2>
@@ -167,11 +200,89 @@
 <div data-include="partials/footer.html"></div>
 
 <noscript><p style="padding:16px;background:#fff3cd;color:#3b2f00;font-size:16px">JavaScript is needed to load the header and footer of this page. Please enable JavaScript.</p></noscript>
+<style>
+  .sm-fallback{padding:12px;font-size:14px;line-height:1.5}
+  .sm-fallback a{text-decoration:underline}
+</style>
 <script src="js/main.js"></script>
 <script src="js/partials-bundle.js"></script>
 <script src="js/lang-hi.js"></script>
 <script src="js/lang.js"></script>
 <script src="js/include.js"></script>
 <script src="partials/backtotop.js"></script>
+
+<!-- X (Twitter) timeline embed, loaded explicitly so we can detect failure and fall back -->
+<script>
+(function () {
+  var xEmbed = document.getElementById('x-embed');
+  var xFallback = document.getElementById('x-fallback');
+  var xRendered = false;
+
+  window.twttr = (function (d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    var t = window.twttr || {};
+    if (d.getElementById(id)) return t;
+    js = d.createElement(s);
+    js.id = id;
+    js.src = 'https://platform.twitter.com/widgets.js';
+    js.async = true;
+    js.onerror = function () { showXFallback(); };
+    fjs.parentNode.insertBefore(js, fjs);
+    t._e = [];
+    t.ready = function (f) { t._e.push(f); };
+    return t;
+  }(document, 'script', 'twitter-wjs'));
+
+  function showXFallback() {
+    if (xRendered || !xEmbed || !xFallback) return;
+    xFallback.hidden = false;
+  }
+
+  window.twttr.ready(function (twttr) {
+    twttr.widgets.load(xEmbed).then(function () {
+      // If widgets.js ran but produced no iframe (blocked, rate-limited, bad handle), fall back.
+      if (xEmbed && !xEmbed.querySelector('iframe')) {
+        showXFallback();
+      } else {
+        xRendered = true;
+      }
+    });
+  });
+
+  // Safety net: if nothing rendered within 6s (script blocked by an extension,
+  // network filter, or CSP), show the fallback link instead of a blank box.
+  setTimeout(function () {
+    if (xEmbed && !xEmbed.querySelector('iframe')) {
+      showXFallback();
+    }
+  }, 6000);
+})();
+</script>
+
+<!-- Facebook page-plugin iframe: detect load failure and fall back to a plain link -->
+<script>
+(function () {
+  var fbIframe = document.getElementById('fb-iframe');
+  var fbFallback = document.getElementById('fb-fallback');
+  if (!fbIframe || !fbFallback) return;
+
+  var loaded = false;
+
+  fbIframe.addEventListener('load', function () {
+    loaded = true;
+  });
+  fbIframe.addEventListener('error', function () {
+    fbFallback.hidden = false;
+  });
+
+  // Some blockers/CSP rules prevent the frame from ever firing load/error.
+  // If it hasn't loaded within 6s, show the fallback link.
+  setTimeout(function () {
+    if (!loaded) {
+      fbFallback.hidden = false;
+    }
+  }, 6000);
+})();
+</script>
 </body>
 </html>
