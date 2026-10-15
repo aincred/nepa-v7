@@ -208,3 +208,35 @@
   if (window.__partialsLoaded) initPartials();
   else document.addEventListener('partials:loaded', initPartials);
 })();
+
+
+function initToTop() {
+  if (document.getElementById('to-top')) return;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hi = (document.documentElement.lang || '') === 'hi';
+  var label = hi ? 'पृष्ठ के शीर्ष पर जाएँ' : 'Back to top';
+
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.id = 'to-top';
+  b.className = 'to-top';
+  b.hidden = true;
+  b.setAttribute('aria-label', label);
+  b.setAttribute('title', label);
+  b.setAttribute('data-no-i18n', '');
+  b.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 6l9 12H3z" fill="currentColor"/></svg>';
+
+  b.addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+    var m = document.getElementById('main');
+    if (m) m.focus({ preventScroll: true });
+  });
+
+  document.body.appendChild(b);
+
+  function toggle() {
+    b.hidden = (window.pageYOffset || document.documentElement.scrollTop) < 300;
+  }
+  window.addEventListener('scroll', toggle, { passive: true });
+  toggle();
+}
