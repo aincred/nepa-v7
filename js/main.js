@@ -30,6 +30,7 @@
     var nav = document.getElementById('site-nav');
     if (!nav) return;
     var btn = nav.querySelector('.menu-toggle');
+    if (!btn) return;
     var subs = [].slice.call(nav.querySelectorAll('li.has-sub'));
     var desktop = window.matchMedia ? window.matchMedia('(min-width: 901px)') : { matches: window.innerWidth > 900 };
 
@@ -94,7 +95,8 @@
     function apply() { document.body.style.zoom = (1 + level * 0.1).toFixed(2); }
     function contrast(on) {
       document.body.classList.toggle('hc', on);
-      panel.querySelector('.a11y-contrast').setAttribute('aria-pressed', on ? 'true' : 'false');
+      var cb = panel.querySelector('.a11y-contrast');
+      if (cb) cb.setAttribute('aria-pressed', on ? 'true' : 'false');
       save('nepa-hc', on ? '1' : '0');
     }
     function toggle(open) { panel.hidden = !open; btn.setAttribute('aria-expanded', open ? 'true' : 'false'); }
@@ -119,6 +121,7 @@
     var t = document.getElementById('ticker');
     if (!t) return;
     var b = t.querySelector('.tk-btn');
+    if (!b) return;
     b.addEventListener('click', function () {
       var p = t.classList.toggle('is-paused');
       b.setAttribute('aria-pressed', p ? 'true' : 'false');
@@ -202,41 +205,25 @@
     els.forEach(function (e) { io.observe(e); });
   }
 
-  /* ---------- boot ---------- */
-  function initPartials() { initNav(); initTicker(); initA11y(); initEmail(); }
-  initSlider(); initLightbox(); initReveal();
+  /* ---------- boot ----------
+     Every start-up step runs on its own inside safe(): if one of them fails
+     (for example a menu item was removed from the header), all the others still work. */
+  function safe(fn, name) {
+    try { fn(); } catch (err) {
+      if (window.console && console.warn) console.warn('[NEPA] ' + name + ' failed:', err);
+    }
+  }
+  var partsDone = false;
+  function initPartials() {
+    if (partsDone) return; partsDone = true;       /* never bind the header twice */
+    safe(initNav, 'menu');
+    safe(initTicker, 'ticker');
+    safe(initA11y, 'accessibility panel');
+    safe(initEmail, 'email links');
+  }
+  safe(initSlider, 'slider');
+  safe(initLightbox, 'photo viewer');
+  safe(initReveal, 'scroll reveal');
   if (window.__partialsLoaded) initPartials();
   else document.addEventListener('partials:loaded', initPartials);
 })();
-
-
-function initToTop() {
-  if (document.getElementById('to-top')) return;
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var hi = (document.documentElement.lang || '') === 'hi';
-  var label = hi ? 'पृष्ठ के शीर्ष पर जाएँ' : 'Back to top';
-
-  var b = document.createElement('button');
-  b.type = 'button';
-  b.id = 'to-top';
-  b.className = 'to-top';
-  b.hidden = true;
-  b.setAttribute('aria-label', label);
-  b.setAttribute('title', label);
-  b.setAttribute('data-no-i18n', '');
-  b.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 6l9 12H3z" fill="currentColor"/></svg>';
-
-  b.addEventListener('click', function () {
-    window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
-    var m = document.getElementById('main');
-    if (m) m.focus({ preventScroll: true });
-  });
-
-  document.body.appendChild(b);
-
-  function toggle() {
-    b.hidden = (window.pageYOffset || document.documentElement.scrollTop) < 300;
-  }
-  window.addEventListener('scroll', toggle, { passive: true });
-  toggle();
-}

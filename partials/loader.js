@@ -1,9 +1,12 @@
 /* Loading screen for every page. Load this in <head> (before other scripts) with partials/loader.css.
    - Shows immediately when a page starts loading and when an internal link is clicked.
-   - Hides when the page, header and footer have finished loading (or after 8 s at most). */
+   - Hides as soon as the page text, header and footer are in place. It does NOT wait for
+     photos any more (that made every page feel slow).
+   - It can never get stuck: a timer hides it after 5 s, and partials/loader.css hides it
+     by itself after 6 s even if JavaScript fails completely. */
 (function () {
   'use strict';
-  var MIN_MS = 500, MAX_MS = 8000;
+  var MIN_MS = 120, MAX_MS = 5000;
   var start = Date.now(), el = null, done = false;
   var hi = (document.documentElement.lang || '') === 'hi';
   var label = hi ? 'लोड हो रहा है…' : 'Loading…';
@@ -21,7 +24,12 @@
     document.documentElement.appendChild(el);
     return el;
   }
-  function show() { done = false; build().classList.remove('is-hidden'); }
+  function show() {
+    done = false;
+    var n = build();
+    n.style.animation = 'none'; void n.offsetWidth; n.style.animation = '';   /* restart the 6 s CSS failsafe */
+    n.classList.remove('is-hidden');
+  }
   function hide() {
     if (done) return; done = true;
     var wait = Math.max(0, MIN_MS - (Date.now() - start));
@@ -29,10 +37,17 @@
   }
 
   show();
-  var loaded = document.readyState === 'complete', parts = !!window.__partialsLoaded;
-  function check() { if (loaded && parts) hide(); }
-  if (!loaded) window.addEventListener('load', function () { loaded = true; check(); });
+  /* ready = header/footer are in place (partials:loaded fires after the page is read).
+     Hindi visitors also wait for the translation so they never see English flash first. */
+  var parts = !!window.__partialsLoaded, lang = !wantsHindi() || !!window.__langReady;
+  function wantsHindi() {
+    try { var q = /[?&]lang=(hi|en)/.exec(location.search); return q ? q[1] === 'hi' : localStorage.getItem('nepa-lang') === 'hi'; }
+    catch (e) { return false; }
+  }
+  function check() { if (parts && lang) hide(); }
   if (!parts) document.addEventListener('partials:loaded', function () { parts = true; check(); });
+  if (!lang) document.addEventListener('lang:ready', function () { lang = true; check(); });
+  window.addEventListener('load', function () { parts = true; lang = true; check(); });   /* backup: page fully loaded */
   check();
   setTimeout(hide, MAX_MS);
 

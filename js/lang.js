@@ -1,11 +1,39 @@
 /* Hindi / English switch (GIGW 3.0: language selector, lang attribute, saved choice).
-   - Strings come from js/lang-hi.js (exact English text -> Hindi).
+   - Strings come from js/lang-hi.js (exact English text -> Hindi). That file is big (300 KB),
+     so it is downloaded ONLY when Hindi is needed (saved choice, or the visitor taps Hindi).
+     English visitors never download it, which keeps every page fast.
    - Elements with data-hi="..." get their whole HTML replaced (for text with bold words etc.).
    - Elements with data-no-i18n are never translated.
    - The choice is remembered on this device and applies to every page. */
 (function () {
   var HI = window.NEPA_HI || {};
   var KEY = 'nepa-lang';
+  /* folder this script was loaded from, so js/lang-hi.js is found from any page */
+  var BASE = (function () {
+    try { var s = document.currentScript && document.currentScript.src; if (s) return s.replace(/[^\/?#]*([?#].*)?$/, ''); } catch (e) {}
+    return 'js/';
+  })();
+  var hiState = window.NEPA_HI ? 'ready' : 'idle', hiWaiters = [];
+  function ensureHi(cb) {                       /* load Hindi strings once, then call cb (always called, even on failure) */
+    if (hiState === 'ready') { cb(); return; }
+    hiWaiters.push(cb);
+    if (hiState === 'loading') return;
+    hiState = 'loading';
+    function settle(ok) {
+      hiState = ok ? 'ready' : 'idle';
+      if (ok && window.NEPA_HI) HI = window.NEPA_HI;
+      var w = hiWaiters; hiWaiters = []; w.forEach(function (f) { try { f(); } catch (e) {} });
+    }
+    try {
+      var sc = document.createElement('script');
+      sc.src = BASE + 'lang-hi.js';
+      sc.async = true;
+      sc.onload = function () { settle(true); };
+      sc.onerror = function () { settle(false); };
+      document.head.appendChild(sc);
+      setTimeout(function () { if (hiState === 'loading') settle(!!window.NEPA_HI); }, 10000);
+    } catch (e) { settle(false); }
+  }
   var EN_M = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var HI_M = ['जनवरी','फ़रवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितंबर','अक्टूबर','नवंबर','दिसंबर'];
   var MRE = EN_M.join('|');
@@ -127,14 +155,24 @@
   function set(l) {
     lang = l;
     try { localStorage.setItem(KEY, l); } catch (e) {}
-    apply(true);
+    if (l === 'hi') ensureHi(function () { if (lang === 'hi') apply(true); });
+    else apply(true);
   }
+  /* warm-up: start downloading Hindi as soon as the visitor points at the Hindi button */
+  function warm(e) { var b = e.target.closest && e.target.closest('[data-lang="hi"]'); if (b && lang !== 'hi') ensureHi(function () {}); }
+  document.addEventListener('mouseover', warm);
+  document.addEventListener('focusin', warm);
+  document.addEventListener('touchstart', warm, { passive: true });
 
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-lang]');
     if (b) { e.preventDefault(); set(b.getAttribute('data-lang')); }
   });
-  document.addEventListener('partials:loaded', function () { apply(false); observe(); });
+  function first() {
+    function go() { apply(false); observe(); window.__langReady = true; try { document.dispatchEvent(new Event('lang:ready')); } catch (e) {} }
+    if (lang === 'hi') ensureHi(go); else go();
+  }
+  document.addEventListener('partials:loaded', first);
   var started = false;
   function observe() {
     if (started) return; started = true;
@@ -147,5 +185,5 @@
       });
     }).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
   }
-  if (window.__partialsLoaded) { apply(false); observe(); }
+  if (window.__partialsLoaded) first();
 })();
